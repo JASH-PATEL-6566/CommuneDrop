@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location-api
+  labels:
+    app: location-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: location-api
+  template:
+    metadata:
+      labels:
+        app: location-api
+    spec:
+      containers:
+        - name: location-service-container
+          image: jashpatel1511/web-location-service:latest
+          ports:
+            - containerPort: 5001
+              name: http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: PORT
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: REDIS_HOST
+            - name: REDIS_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: REDIS_DB
+            - name: CACHE_TTL_SUGGESTIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: CACHE_TTL_SUGGESTIONS
+            - name: CACHE_TTL_COORDINATES
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: CACHE_TTL_COORDINATES
+            - name: CACHE_TTL_ROUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: location-service-configmap
+                  key: CACHE_TTL_ROUTES
+            - name: REDIS_PASSWORD
+              value: ""
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: location-service-secret
+                  key: AWS_REGION
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: location-service-secret
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: location-service-secret
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_PLACE_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: location-service-secret
+                  key: AWS_PLACE_INDEX
+            - name: AWS_ROUTE_CALCULATOR
+              valueFrom:
+                secretKeyRef:
+                  name: location-service-secret
+                  key: AWS_ROUTE_CALCULATOR
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: location-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: location-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5001
+      name: http
+  type: LoadBalancer
+#

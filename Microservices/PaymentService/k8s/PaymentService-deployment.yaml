@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  labels:
+    app: payment-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+    spec:
+      containers:
+        - name: payment-service-container
+          image: jashpatel1511/web-payment-service:latest
+          ports:
+            - containerPort: 9000
+              name: http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-configmap
+                  key: port
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secret
+                  key: stripe_secret_key
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secret
+                  key: db_url
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-configmap
+                  key: order_service_url
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-configmap
+                  key: node_env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: payment-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9000
+      name: http
+  type: LoadBalancer
+

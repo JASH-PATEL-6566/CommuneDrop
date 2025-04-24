@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-api
+  template:
+    metadata:
+      labels:
+        app: auth-api
+    spec:
+      containers:
+        - name: auth-api
+          image: jashpatel1511/web-auth-service:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: appsettings-volume
+              mountPath: /appsettings.json # Mount path inside the container
+              subPath: appsettings.json # Name of the file inside the container
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: appsettings-volume
+          configMap:
+            name: authservice-configmap # The name of the ConfigMap created
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: auth-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      name: http
+  type: LoadBalancer
+  #

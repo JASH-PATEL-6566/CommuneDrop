@@ -1,0 +1,48 @@
+# **Build files**
+bin/
+obj/
+artifacts/
+
+# **IDE-specific files**
+.vs/                # Visual Studio settings
+.idea/              # JetBrains Rider settings
+.vscode/            # VS Code settings
+*.suo               # Solution user options
+*.user              # User-specific settings
+*.userosscache      
+*.sln.cache
+*.ide/
+
+# **Logs & Debugging**
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# **Configuration & Secrets**.
+appsettings.Development.json
+secrets.json
+.env
+
+# **Entity Framework Core Migrations**
+Migrations/
+
+# **NuGet & Dependencies**
+*.nuget/
+project.lock.json
+project.assets.json
+
+# **Resharper & Rider**
+*.DotSettings.user
+.idea/
+
+# **System Files**
+.DS_Store           
+Thumbs.db          
+ehthumbs.db
+
+# **Docker & Compose**
+.dockerignore
+docker-compose.yml
+compose.yaml

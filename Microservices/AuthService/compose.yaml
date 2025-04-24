@@ -1,0 +1,6 @@
+﻿services:
+  potholebackendapp:
+    image: potholebackendapp
+    build:
+      context: .
+      dockerfile: PotholeBackendApp/Dockerfile

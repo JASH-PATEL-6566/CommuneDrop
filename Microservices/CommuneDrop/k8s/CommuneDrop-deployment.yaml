@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: commune-drop-api
+  labels:
+    app: commune-drop-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: commune-drop-api
+  template:
+    metadata:
+      labels:
+        app: commune-drop-api
+    spec:
+      initContainers:
+        - name: wait-for-kafka
+          image: confluentinc/cp-kafka:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Waiting for Kafka to be ready..."
+              until kafka-topics --bootstrap-server kafka-service:9092 --list; do
+                echo "Kafka not ready yet, waiting..."
+                sleep 5
+              done
+              echo "Kafka is ready!"
+      containers:
+        - name: commune-drop-frontend-container
+          image: jashpatel1511/web-commune-drop-frontend:latest
+          ports:
+            - containerPort: 5173
+              name: frontend
+            - containerPort: 3001
+              name: websocket
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: VITE_SUPABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_SUPABASE_URL
+            - name: VITE_WEBSOCKET_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_WEBSOCKET_URL
+            - name: VITE_PAYMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_PAYMENT_SERVICE_URL
+            - name: VITE_ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_ORDER_SERVICE_URL
+            - name: VITE_LOCATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_LOCATION_SERVICE_URL
+            - name: VITE_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_API_BASE_URL
+            - name: VITE_LOCATION_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_LOCATION_CLIENT_ID
+            - name: VITE_ORDER_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: commune-drop-frontend-configmap
+                  key: VITE_ORDER_CLIENT_ID
+            - name: VITE_SUPABASE_ANON_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: commune-drop-frontend-secret
+                  key: VITE_SUPABASE_ANON_KEY
+            - name: VITE_PUBLIC_GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: commune-drop-frontend-secret
+                  key: VITE_PUBLIC_GOOGLE_MAPS_API_KEY
+            - name: VITE_PUBLIC_STRIPE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: commune-drop-frontend-secret
+                  key: VITE_PUBLIC_STRIPE_API_KEY
+            - name: VITE_LOCATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: commune-drop-frontend-secret
+                  key: VITE_LOCATION_CLIENT_SECRET
+            - name: VITE_ORDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: commune-drop-frontend-secret
+                  key: VITE_ORDER_CLIENT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: commune-drop-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: commune-drop-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5173
+      name: frontend
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+      name: websocket
+  type: LoadBalancer

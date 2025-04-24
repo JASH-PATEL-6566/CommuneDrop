@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-configmap
+  labels:
+    app: payment-service-configmap
+data:
+  port: "9000"
+  order_service_url: "http://order-service:80/order"
+  node_env: "development"

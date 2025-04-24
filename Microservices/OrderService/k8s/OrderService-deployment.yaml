@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-api
+  labels:
+    app: order-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-api
+  template:
+    metadata:
+      labels:
+        app: order-api
+    spec:
+      containers:
+        - name: order-service-container
+          image: jashpatel1511/web-order-service:latest
+          ports:
+            - containerPort: 9002
+              name: http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-configmap
+                  key: port
+            - name: PAYMENT_SERVICE
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-configmap
+                  key: payment_service
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: order-service-secret
+                  key: db_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: order-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9002
+      name: http
+  type: LoadBalancer

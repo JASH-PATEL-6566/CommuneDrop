@@ -1,0 +1,22 @@
+{
+  "name": "kafka-notification-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Kafka notifications",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js",
+    "dev": "nodemon websocket-server.js"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "socket.io": "^4.8.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.28",
+    "@types/uuid": "^9.0.8",
+    "nodemon": "^3.1.9",
+    "typescript": "^5.8.2"
+  }
+}
+

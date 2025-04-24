@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: live-location-frontend
+  labels:
+    app: live-location-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: live-location-frontend
+  template:
+    metadata:
+      labels:
+        app: live-location-frontend
+    spec:
+      containers:
+        - name: live-location-frontend
+          image: jashpatel1511/web-live-location-frontend:latest
+          ports:
+            - containerPort: 3000
+              name: frontend
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # Add startup probe to give more time for initialization
+          startupProbe:
+            httpGet:
+              path: /health.html
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 10
+          # Update readiness probe to use the simple health check
+          readinessProbe:
+            httpGet:
+              path: /health.html
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: live-location-frontend-configmap
+                  key: PORT
+            - name: REACT_APP_SOCKET_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: live-location-frontend-configmap
+                  key: REACT_APP_SOCKET_URL
+            - name: REACT_APP_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: live-location-frontend-configmap
+                  key: REACT_APP_API_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: live-location-frontend-configmap
+                  key: NODE_ENV
+            - name: REACT_APP_GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: live-location-frontend-secret
+                  key: REACT_APP_GOOGLE_MAPS_API_KEY
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: live-location-frontend-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: live-location-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      name: frontend
+  type: LoadBalancer
+

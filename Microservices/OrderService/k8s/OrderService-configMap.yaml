@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-configmap
+  labels:
+    app: order-service-configmap
+data:
+  port: "9002"
+  payment_service: "http://payment-service/payment"
+#

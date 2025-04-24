@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: location-service-configmap
+  labels:
+    app: location-service-configmap
+data:
+  PORT: "5001"
+  REDIS_HOST: "localhost"
+  REDIS_DB: "0"
+  CACHE_TTL_SUGGESTIONS: "86400"
+  CACHE_TTL_COORDINATES: "2592000"
+  CACHE_TTL_ROUTES: "604800"
